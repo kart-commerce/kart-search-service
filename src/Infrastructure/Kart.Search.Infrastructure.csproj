@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Application\Kart.Search.Application.csproj" />
+    <ProjectReference Include="..\Domain\Kart.Search.Domain.csproj" />
+  </ItemGroup>
+
+  <!-- OpenSearch read side (database-design.md): search_products (8 shards, routed by category.categoryId),
+       search_category_lookup (1 shard), search_rating_ledger (4 shards, routed by sku). This service's
+       one and only data store - there is no PostgreSQL write model of its own.
+
+       Talks to OpenSearch over its plain REST API via a thin typed HttpClient wrapper
+       (Search/OpenSearchHttpClient.cs) rather than a NEST-style typed client package - the query
+       shapes this service needs (function_score/script_score ranking, scripted-update guards,
+       multi-facet aggregations with graceful degradation, alias swaps) are all raw JSON bodies
+       this service already needs to construct precisely either way, and OpenSearch's REST API
+       itself is the stable, versioned contract - not any particular client library's surface. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+  </ItemGroup>
+
+  <!-- Message-bus-manifest-driven RabbitMQ topology (mirrors kart-identity-service's/kart-product-service's proven pattern). -->
+  <ItemGroup>
+    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
+  </ItemGroup>
+
+  <!-- Rebuild-only (SRCH-9): scheduled, paginated read-replica bulk read against kart-product-service's
+       PostgreSQL write side (variants/product_groups) - raw ADO.NET, not EF Core, since this service
+       never owns or migrates that schema, only reads it (database-design.md's Rebuild Backfill Mechanism). -->
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="8.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- BackgroundService/IHostedService, used by every hosted service in Messaging/ and Search/. -->
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
+  </ItemGroup>
+
+</Project>

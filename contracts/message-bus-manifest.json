@@ -1,0 +1,80 @@
+{
+  "service": "kart-search-service",
+  "exchanges": [
+    { "name": "search.dlx", "type": "topic", "durable": true }
+  ],
+  "externalExchanges": [
+    { "name": "product.exchange", "type": "topic", "durable": true },
+    { "name": "category.exchange", "type": "topic", "durable": true },
+    { "name": "review.exchange", "type": "topic", "durable": true }
+  ],
+  "publishedEvents": [],
+  "queues": [
+    {
+      "name": "search.product-events.queue",
+      "durable": true,
+      "bindings": [
+        { "exchange": "product.exchange", "routingKey": "product.product.created" },
+        { "exchange": "product.exchange", "routingKey": "product.price.changed" },
+        { "exchange": "product.exchange", "routingKey": "product.product.updated" },
+        { "exchange": "product.exchange", "routingKey": "product.product.discontinued" }
+      ],
+      "deadLetter": {
+        "exchange": "search.dlx",
+        "routingKey": "search.product-events.dlq"
+      },
+      "retryLadder": {
+        "requeueTo": "search.product-events.queue",
+        "tiers": [
+          { "name": "search.product-events.retry.30s", "ttlMs": 30000 },
+          { "name": "search.product-events.retry.60s", "ttlMs": 60000 },
+          { "name": "search.product-events.retry.120s", "ttlMs": 120000 }
+        ]
+      }
+    },
+    {
+      "name": "search.category-events.queue",
+      "durable": true,
+      "bindings": [
+        { "exchange": "category.exchange", "routingKey": "category.category.updated" }
+      ],
+      "deadLetter": {
+        "exchange": "search.dlx",
+        "routingKey": "search.category-events.dlq"
+      },
+      "retryLadder": {
+        "requeueTo": "search.category-events.queue",
+        "tiers": [
+          { "name": "search.category-events.retry.30s", "ttlMs": 30000 },
+          { "name": "search.category-events.retry.60s", "ttlMs": 60000 },
+          { "name": "search.category-events.retry.120s", "ttlMs": 120000 }
+        ]
+      }
+    },
+    {
+      "name": "search.review-events.queue",
+      "durable": true,
+      "bindings": [
+        { "exchange": "review.exchange", "routingKey": "review.review.submitted" },
+        { "exchange": "review.exchange", "routingKey": "review.review.updated" }
+      ],
+      "deadLetter": {
+        "exchange": "search.dlx",
+        "routingKey": "search.review-events.dlq"
+      },
+      "retryLadder": {
+        "requeueTo": "search.review-events.queue",
+        "tiers": [
+          { "name": "search.review-events.retry.30s", "ttlMs": 30000 },
+          { "name": "search.review-events.retry.60s", "ttlMs": 60000 }
+        ]
+      }
+    }
+  ],
+  "deadLetterQueues": [
+    { "name": "search.product-events.dlq", "exchange": "search.dlx", "routingKey": "search.product-events.dlq" },
+    { "name": "search.category-events.dlq", "exchange": "search.dlx", "routingKey": "search.category-events.dlq" },
+    { "name": "search.review-events.dlq", "exchange": "search.dlx", "routingKey": "search.review-events.dlq" }
+  ],
+  "_comment": "Reconciled to the mature nested manifest shape kart-identity-service/kart-inventory-service/kart-category-service/kart-product-service already use, superseding the flatter exchange/dlx/queues/dlqs/retry-as-siblings shape still present in kart-platform/docs/services/kart-search-service/message-bus-manifest.json (see contracts/README.md). Search publishes no events (pure consumer/query context, event-contract.md) - it owns no publish exchange, only its own DLX (search.dlx). Three queues, one per publisher: search.product-events.queue (4 routing keys from product.exchange, 3x retry ladder matching event-contract.md), search.category-events.queue (1 routing key from category.exchange, 3x retry ladder), search.review-events.queue (2 routing keys from review.exchange, 2x retry ladder, matching Review's own lower publish-side tier for both events)."
+}

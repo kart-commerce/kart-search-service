@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!--
+    Kart.Shared.Domain (kart-conventions.md) supplies Result/Error - the "one platform-wide
+    implementation, not built locally by each service" pattern. This service's two aggregates
+    (SearchDocument, CategoryLookup) do not use Kart.Shared.Domain's AggregateRoot/IDomainEvent,
+    since neither is ever persisted via EF Core or raises a domain event of its own (ddd-model.md:
+    "None published" - Search is a pure consumer/query context) - they are plain guarded entities
+    whose only invariant is the version/timestamp write-guard, applied in-memory before an
+    Infrastructure-layer OpenSearch write. No published NuGet feed exists yet, so this is a
+    ProjectReference (kart-shared's own README documents this as the interim consumption path).
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\kart-shared\src\Kart.Shared.Domain\Kart.Shared.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Application\Kart.Search.Application.csproj" />
+    <ProjectReference Include="..\Infrastructure\Kart.Search.Infrastructure.csproj" />
+    <!--
+      Kart.Shared.ErrorHandling / Kart.Shared.Observability (kart-conventions.md): the single
+      platform-wide global-exception-handler + Serilog/OTel wiring. No published NuGet feed
+      exists, so this is a ProjectReference, per kart-shared's own README - matching
+      kart-product-service's own current (most mature) convention.
+    -->
+    <ProjectReference Include="..\..\..\kart-shared\src\Kart.Shared.ErrorHandling\Kart.Shared.ErrorHandling.csproj" />
+    <ProjectReference Include="..\..\..\kart-shared\src\Kart.Shared.Observability\Kart.Shared.Observability.csproj" />
+  </ItemGroup>
+
+  <!--
+    contracts/ is this service's single source of truth for its HTTP surface and RabbitMQ
+    topology - copied into the build output so ContractTests and the manifest loader can find
+    them at runtime without a "../../contracts" relative path that would break once this service
+    is deployed as its own container image.
+  -->
+  <ItemGroup>
+    <Content Include="..\..\contracts\message-bus-manifest.json" Link="message-bus-manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\contracts\api-contract.yaml" Link="api-contract.yaml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

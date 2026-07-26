@@ -1,0 +1,66 @@
+# Deploys kart-search-service via kart-infra's generic service-chart:
+#   helm install kart-search-service kart-infra/helm/service-chart -f deploy/values-kart-search-service.yaml
+#
+# No sibling service has committed its own values-<service>.yaml yet, so there is no established
+# precedent for exactly where this file should live - kept here, alongside the service it deploys,
+# since it's this service's own deployment configuration, not shared platform config.
+#
+# OpenSearch and RabbitMQ are NOT provisioned by this chart (it only deploys this service's own
+# container) - they are pre-provisioned platform/shared infrastructure per environment, matching
+# every other service's assumption that its brokers/databases already exist in staging/production.
+
+nameOverride: kart-search-service
+
+image:
+  repository: kart-search-service
+  tag: latest
+
+containerPort: 8080
+
+probes:
+  liveness:
+    type: httpGet
+    path: /health/live
+  readiness:
+    type: httpGet
+    path: /health/ready
+
+# Search sits on the high-read side of the platform's 20:1 read:write ratio (requirement-spec.md
+# §3) - a slightly larger request budget than the chart's generic default, revisable once real
+# query-volume load-testing data exists (database-design.md's own "not a load-tested figure"
+# framing for every capacity constant in this service).
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+serviceMonitor:
+  enabled: true
+  path: /metrics
+  interval: 15s
+
+env:
+  - name: RabbitMq__HostName
+    value: "rabbitmq.kart-platform.svc.cluster.local"
+  - name: OpenSearch__Uri
+    value: "http://opensearch.kart-platform.svc.cluster.local:9200"
+
+# ProductCatalogSnapshot__ConnectionString (SRCH-9 rebuild-only) is a secret - supplied via a K8s
+# Secret + envFrom below (kart-conventions.md: this chart never takes secret values as plain Helm
+# values), never listed under `env` above.
+envFrom:
+  - secretRef:
+      name: kart-search-service-secrets

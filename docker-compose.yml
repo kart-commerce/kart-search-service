@@ -1,0 +1,67 @@
+name: kart-search-service
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: kart-search-rabbitmq
+    environment:
+      # RabbitMQ's built-in guest user is restricted to true loopback connections by default
+      # (loopback_users) - every container-to-container hop here goes through Docker's bridge
+      # network NAT, which does not satisfy that check. A non-guest user is not subject to it.
+      RABBITMQ_DEFAULT_USER: "kart_search"
+      RABBITMQ_DEFAULT_PASS: "changeme"
+    ports:
+      - "5674:5672"
+      - "15674:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # --- OpenSearch (database-design.md: search_products/search_category_lookup/search_rating_ledger) ---
+  # Single-node topology for local dev/verification - a minimal-but-real stand-in for the
+  # production 8/1/4-shard, 1-replica cluster (production shard counts are set on the indices
+  # themselves regardless; replicas are 0 here only via OpenSearch__ProductsReplicas etc. below,
+  # since a single node can never allocate a replica shard - matches how kart-product-service's own
+  # Mongo cluster in compose is "minimal-but-real, not HA" for dev).
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: kart-search-opensearch
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - kart-search-opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\"'"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  search-service:
+    build:
+      context: ..
+      dockerfile: kart-search-service/Dockerfile
+    container_name: kart-search-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    ports:
+      - "8083:8080"
+    environment:
+      RabbitMq__HostName: "rabbitmq"
+      RabbitMq__UserName: "kart_search"
+      RabbitMq__Password: "changeme"
+      OpenSearch__Uri: "http://opensearch:9200"
+      OpenSearch__ProductsReplicas: "0"
+      OpenSearch__RatingLedgerReplicas: "0"
+      OpenSearch__CategoryLookupReplicas: "0"
+
+volumes:
+  kart-search-opensearch-data:
