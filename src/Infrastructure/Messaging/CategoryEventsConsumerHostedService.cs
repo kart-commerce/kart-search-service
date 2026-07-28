@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Kart.Search.Application.Features.ConsumeCategoryUpdated;
+using Kart.Shared.Messaging;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

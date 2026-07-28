@@ -5,6 +5,7 @@ using Kart.Search.Application.Features.ConsumeProductDiscontinued;
 using Kart.Search.Application.Features.ConsumeProductPriceChanged;
 using Kart.Search.Application.Features.ConsumeProductUpdated;
 using Kart.Search.Domain.SearchDocuments;
+using Kart.Shared.Messaging;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

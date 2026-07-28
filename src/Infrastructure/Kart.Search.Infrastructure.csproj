@@ -28,6 +28,7 @@
   <!-- Message-bus-manifest-driven RabbitMQ topology (mirrors kart-identity-service's/kart-product-service's proven pattern). -->
   <ItemGroup>
     <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
+    <ProjectReference Include="..\..\..\kart-shared\src\Kart.Shared.Messaging\Kart.Shared.Messaging.csproj" />
   </ItemGroup>
 
   <!-- Rebuild-only (SRCH-9): scheduled, paginated read-replica bulk read against kart-product-service's

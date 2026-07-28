@@ -4,12 +4,17 @@ using Kart.Search.Api.Middleware;
 using Kart.Search.Application;
 using Kart.Search.Application.Common.Exceptions;
 using Kart.Search.Infrastructure;
+using Kart.Shared.Configuration;
 using Kart.Shared.ErrorHandling;
 using Kart.Shared.Observability;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// kart-conventions.md Configuration Management: GlobalConfig external-secrets-file bootstrap,
+// shared across every service - never reimplemented per service. See appsettings.Local.json.example.
+builder.AddKartGlobalConfig();
 
 builder.AddKartObservability("kart-search-service");
 
