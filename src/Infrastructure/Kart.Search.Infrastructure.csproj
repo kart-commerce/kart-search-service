@@ -29,6 +29,10 @@
   <ItemGroup>
     <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
     <ProjectReference Include="..\..\..\kart-shared\src\Kart.Shared.Messaging\Kart.Shared.Messaging.csproj" />
+    <!-- KartFlowContext (Flow-tagging for structured logs) + RabbitMqTraceContext's
+         ActivitySource, needed here in ProductEventsConsumerHostedService - Observability itself
+         is still wired once, at the Api composition root (Program.cs). -->
+    <ProjectReference Include="..\..\..\kart-shared\src\Kart.Shared.Observability\Kart.Shared.Observability.csproj" />
   </ItemGroup>
 
   <!-- Rebuild-only (SRCH-9): scheduled, paginated read-replica bulk read against kart-product-service's
@@ -39,8 +43,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- BackgroundService/IHostedService, used by every hosted service in Messaging/ and Search/. -->
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
+    <!-- BackgroundService/IHostedService, used by every hosted service in Messaging/ and Search/.
+         Pinned to 10.0.0, not this TFM's "native" 8.0.1, because Kart.Shared.Observability pulls
+         Serilog.AspNetCore 10.0.0 -> ... -> this package at >=10.0.0 transitively; net8.0 runs a
+         higher Microsoft.Extensions.* package version than its own TFM without issue (these
+         packages are supported down-level), so this is a version-pin bump, not a runtime change. -->
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
   </ItemGroup>
 
 </Project>
