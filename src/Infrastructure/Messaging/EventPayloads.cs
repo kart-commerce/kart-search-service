@@ -42,8 +42,13 @@ public sealed record ProductUpdatedPayload(
 public sealed record ProductDiscontinuedPayload(string Sku, DateTimeOffset DiscontinuedAt);
 
 /// <summary><c>parentId</c>/<c>path</c> are received but not consumed further by this service -
-/// Search only needs the leaf <c>categoryId -&gt; name</c> mapping (event-contract.md).</summary>
-public sealed record CategoryUpdatedPayload(string CategoryId, string Name, string? ParentId, string? Path, string Operation, DateTimeOffset OccurredAt);
+/// Search only needs the leaf <c>categoryId -&gt; name</c> mapping (event-contract.md).
+/// <c>Path</c> must stay an array of ids to match what kart-category-service actually publishes
+/// (<c>CategoryUpdatedEventPayload.Path</c>, an <c>IReadOnlyList&lt;Guid&gt;</c> materialized path) -
+/// this was previously typed <c>string?</c> here, which failed deserialization of the *entire*
+/// payload for every single CategoryUpdated event ever published (found 2026-08-11 via 73 messages
+/// stuck in search.category-events.dlq).</summary>
+public sealed record CategoryUpdatedPayload(string CategoryId, string Name, string? ParentId, IReadOnlyList<Guid>? Path, string Operation, DateTimeOffset OccurredAt);
 
 public sealed record ReviewSubmittedPayload(string OrderId, string Sku, double Rating, string ReviewId, string UserId);
 

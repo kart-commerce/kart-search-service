@@ -5,6 +5,8 @@ using Kart.Search.Application.Features.ConsumeProductDiscontinued;
 using Kart.Search.Application.Features.ConsumeProductPriceChanged;
 using Kart.Search.Application.Features.ConsumeProductUpdated;
 using Kart.Search.Domain.SearchDocuments;
+using Kart.Shared.Messaging;
+using Kart.Shared.Observability;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -71,6 +73,12 @@ public sealed class ProductEventsConsumerHostedService(
 
     private async Task OnMessageAsync(IModel channel, QueueDefinition queue, BasicDeliverEventArgs delivery, CancellationToken cancellationToken)
     {
+        // Every event on this queue (ProductCreated/PriceChanged/Updated/Discontinued) is this
+        // flow's own fan-out into search indexing - the "downstream consumer" hop Section 4 of
+        // the tracing standard names explicitly.
+        using var flowScope = KartFlowContext.Push("ProductCatalogManagementAdmin");
+        using var activity = RabbitMqTraceContext.StartConsumeActivity(QueueName, delivery.BasicProperties);
+
         try
         {
             var json = Encoding.UTF8.GetString(delivery.Body.ToArray());
@@ -80,6 +88,8 @@ public sealed class ProductEventsConsumerHostedService(
             // Not delivery.RoutingKey directly - a retry-ladder bounce overwrites it with the
             // retry-tier queue name by the time RabbitMQ redelivers to this queue.
             var routingKey = RetryLadderDispatcher.GetEffectiveRoutingKey(delivery);
+
+            logger.LogInformation("Stage {Stage}: {RoutingKey} consumed from {Queue}", "SearchProductEventConsumed", routingKey, QueueName);
 
             IRequest command = routingKey switch
             {
@@ -91,6 +101,7 @@ public sealed class ProductEventsConsumerHostedService(
             };
 
             await sender.Send(command, cancellationToken);
+            logger.LogInformation("Stage {Stage}: {RoutingKey} applied to search index", "SearchIndexUpdated", routingKey);
 
             channel.BasicAck(delivery.DeliveryTag, multiple: false);
         }

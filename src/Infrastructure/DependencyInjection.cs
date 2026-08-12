@@ -2,6 +2,7 @@ using Kart.Search.Application.Common.Interfaces;
 using Kart.Search.Infrastructure.Messaging;
 using Kart.Search.Infrastructure.Rebuild;
 using Kart.Search.Infrastructure.Search;
+using Kart.Shared.Messaging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -16,20 +17,18 @@ public static class DependencyInjection
         services.Configure<OpenSearchOptions>(configuration.GetSection("OpenSearch"));
         services.Configure<ProductCatalogSnapshotOptions>(configuration.GetSection("ProductCatalogSnapshot"));
 
-        // Message-bus-manifest-driven RabbitMQ topology (kart-identity-service's proven pattern) -
-        // loaded once as a singleton; contracts/message-bus-manifest.json is copied to this
-        // service's own output directory (Api.csproj) so this resolves without a fragile
-        // "../../contracts" relative path once deployed as its own container image.
-        services.AddSingleton(sp =>
+        // Message-bus-manifest-driven RabbitMQ topology (Kart.Shared.Messaging) - manifest loaded
+        // once as a singleton; contracts/message-bus-manifest.json is copied to this service's own
+        // output directory (Api.csproj) so this resolves without a fragile "../../contracts"
+        // relative path once deployed as its own container image.
+        services.AddKartMessageBusManifest(sp => sp.GetRequiredService<IOptions<RabbitMqOptions>>().Value.ManifestPath);
+        services.AddKartRabbitMqConnectionFactory(sp =>
         {
-            var rabbitMqOptions = sp.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
-            var manifestPath = Path.IsPathRooted(rabbitMqOptions.ManifestPath)
-                ? rabbitMqOptions.ManifestPath
-                : Path.Combine(AppContext.BaseDirectory, rabbitMqOptions.ManifestPath);
-            return MessageBusManifestLoader.Load(manifestPath);
+            var options = sp.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
+            return new RabbitMqConnectionSettings(options.HostName, options.Port, options.UserName, options.Password);
         });
+        services.AddKartRabbitMqTopologyStartup();
 
-        services.AddHostedService<RabbitMqTopologyStartupHostedService>();
         services.AddHostedService<ProductEventsConsumerHostedService>();
         services.AddHostedService<CategoryEventsConsumerHostedService>();
         services.AddHostedService<ReviewEventsConsumerHostedService>();

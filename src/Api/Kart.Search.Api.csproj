@@ -22,6 +22,7 @@
     -->
     <ProjectReference Include="..\..\..\kart-shared\src\Kart.Shared.ErrorHandling\Kart.Shared.ErrorHandling.csproj" />
     <ProjectReference Include="..\..\..\kart-shared\src\Kart.Shared.Observability\Kart.Shared.Observability.csproj" />
+    <ProjectReference Include="..\..\..\kart-shared\src\Kart.Shared.Configuration\Kart.Shared.Configuration.csproj" />
   </ItemGroup>
 
   <!--
