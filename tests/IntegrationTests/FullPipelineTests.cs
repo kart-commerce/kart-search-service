@@ -85,6 +85,56 @@ public sealed class FullPipelineTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task CategoryUpdated_WithRealWireShape_IsConsumedAndEnrichesSubsequentProducts()
+    {
+        // Regression test for a real bug found 2026-08-11: kart-search-service's own
+        // CategoryUpdatedPayload.Path was typed `string?`, but kart-category-service actually
+        // publishes `path` as an array of ids (a materialized path). That type mismatch failed
+        // JSON deserialization of the *entire* payload - not just the unused Path field - so this
+        // consumer never once successfully processed a CategoryUpdated event; 73 messages piled up
+        // in search.category-events.dlq before the fix. This test publishes the real wire shape
+        // (path as a JSON array) and proves it's consumed by checking its effect on a later
+        // ProductCreated's categoryName enrichment (Application/Features/ConsumeProductCreated's
+        // own CategoryLookup read) - a deserialization failure here would leave categoryName null.
+        var categoryId = $"cat-integration-{Guid.NewGuid():N}";
+        var categoryName = $"Integration Category {Guid.NewGuid():N}";
+
+        await PublishAsync("category.exchange", "category.category.updated", new
+        {
+            categoryId,
+            name = categoryName,
+            parentId = (string?)null,
+            path = new[] { Guid.NewGuid(), Guid.NewGuid() }, // real shape: array of ids, not a string
+            operation = "created",
+            occurredAt = DateTimeOffset.UtcNow,
+        });
+
+        // No direct way to poll CategoryLookup itself - the handler's effect only surfaces via a
+        // later product's enrichment read, so give the (fire-and-forget-from-this-test's-view)
+        // consume a moment before publishing the product that depends on it.
+        await Task.Delay(TimeSpan.FromSeconds(2));
+
+        var sku = $"SKU-{Guid.NewGuid():N}";
+        await PublishAsync("product.exchange", "product.product.created", new
+        {
+            sku,
+            name = "Category Enrichment Test Widget",
+            description = (string?)null,
+            categoryId,
+            brand = (string?)null,
+            price = new { amount = 5m, currency = "USD" },
+            status = "Active",
+            attributes = new { size = (string?)null, color = (string?)null, extendedAttributes = new Dictionary<string, object?>() },
+            occurredAt = DateTimeOffset.UtcNow,
+        });
+
+        var found = await PollForResultAsync(sku, TimeSpan.FromSeconds(20));
+
+        found.Should().NotBeNull();
+        found!.Value.GetProperty("category").GetProperty("categoryName").GetString().Should().Be(categoryName);
+    }
+
+    [Fact]
     public async Task OutOfOrderProductPriceChanged_OlderRedeliveryIsRejectedByTheGuard()
     {
         var sku = $"SKU-{Guid.NewGuid():N}";
