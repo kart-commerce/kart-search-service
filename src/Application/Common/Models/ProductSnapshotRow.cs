@@ -15,4 +15,5 @@ public sealed record ProductSnapshotRow(
     string Status,
     string? Size,
     string? Color,
-    IReadOnlyDictionary<string, object?> ExtendedAttributes);
+    IReadOnlyDictionary<string, object?> ExtendedAttributes,
+    string? ImageUrl = null);

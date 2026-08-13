@@ -21,7 +21,7 @@ public sealed class ConsumeProductUpdatedCommandHandler(
             categoryName = await categoryLookupRepository.GetCategoryNameAsync(request.CategoryId, cancellationToken);
         }
 
-        var fields = new CatalogUpdateFields(request.Name, request.Description, request.CategoryId, categoryName, request.Brand, request.Attributes);
+        var fields = new CatalogUpdateFields(request.Name, request.Description, request.CategoryId, categoryName, request.Brand, request.Attributes, request.ImageUrl);
         var applied = await projectionRepository.ApplyCatalogUpdateAsync(request.Sku, fields, request.OccurredAt, cancellationToken);
 
         if (applied)

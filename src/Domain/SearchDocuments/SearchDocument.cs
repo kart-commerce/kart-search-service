@@ -20,6 +20,7 @@ public sealed class SearchDocument
     public string? Description { get; private set; }
     public CategoryRef Category { get; private set; }
     public string? Brand { get; private set; }
+    public string? ImageUrl { get; private set; }
     public Money Price { get; private set; }
     public Availability Availability { get; private set; }
     public FacetableAttributes Attributes { get; private set; }
@@ -39,6 +40,7 @@ public sealed class SearchDocument
         string? description,
         CategoryRef category,
         string? brand,
+        string? imageUrl,
         Money price,
         Availability availability,
         FacetableAttributes attributes,
@@ -51,6 +53,7 @@ public sealed class SearchDocument
         Description = description;
         Category = category;
         Brand = brand;
+        ImageUrl = imageUrl;
         Price = price;
         Availability = availability;
         Attributes = attributes;
@@ -73,13 +76,15 @@ public sealed class SearchDocument
         Money price,
         FacetableAttributes attributes,
         DateTimeOffset occurredAt,
-        DateTimeOffset now) =>
+        DateTimeOffset now,
+        string? imageUrl = null) =>
         new(
             sku,
             name,
             description,
             new CategoryRef(categoryId, categoryName),
             brand,
+            imageUrl,
             price,
             Availability.Active,
             attributes,
@@ -119,7 +124,8 @@ public sealed class SearchDocument
         string? brand,
         FacetableAttributes? attributes,
         DateTimeOffset occurredAt,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        string? imageUrl = null)
     {
         if (!CanApplyCatalogEvent(occurredAt))
         {
@@ -144,6 +150,11 @@ public sealed class SearchDocument
         if (brand is not null)
         {
             Brand = brand;
+        }
+
+        if (imageUrl is not null)
+        {
+            ImageUrl = imageUrl;
         }
 
         if (attributes is not null)

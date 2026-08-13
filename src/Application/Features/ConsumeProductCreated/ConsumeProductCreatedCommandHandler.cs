@@ -29,7 +29,8 @@ public sealed class ConsumeProductCreatedCommandHandler(
             request.Price,
             request.Attributes,
             request.OccurredAt,
-            now);
+            now,
+            request.ImageUrl);
 
         await projectionRepository.CreateAsync(document, cancellationToken);
 

@@ -22,7 +22,8 @@ public sealed record ProductCreatedPayload(
     MoneyPayload Price,
     string Status,
     AttributesPayload Attributes,
-    DateTimeOffset OccurredAt);
+    DateTimeOffset OccurredAt,
+    string? ImageUrl = null);
 
 public sealed record ProductPriceChangedPayload(string Sku, MoneyPayload OldPrice, MoneyPayload NewPrice, DateTimeOffset OccurredAt);
 
@@ -37,7 +38,8 @@ public sealed record ProductUpdatedPayload(
     string? CategoryId,
     string? Brand,
     string? Status,
-    AttributesPayload? Attributes);
+    AttributesPayload? Attributes,
+    string? ImageUrl = null);
 
 public sealed record ProductDiscontinuedPayload(string Sku, DateTimeOffset DiscontinuedAt);
 

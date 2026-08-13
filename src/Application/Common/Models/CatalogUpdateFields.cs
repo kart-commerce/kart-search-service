@@ -12,4 +12,5 @@ public sealed record CatalogUpdateFields(
     string? CategoryId,
     string? CategoryName,
     string? Brand,
-    FacetableAttributes? Attributes);
+    FacetableAttributes? Attributes,
+    string? ImageUrl = null);

@@ -22,7 +22,8 @@ public sealed record SearchResultItemDto(
     string Availability,
     RatingSummaryDto Rating,
     string? Size,
-    string? Color);
+    string? Color,
+    string? ImageUrl = null);
 
 /// <summary>Mirrors <c>api-contract.yaml</c>'s <c>FacetBucket</c> schema.</summary>
 public sealed record FacetBucketDto(string Value, long Count);

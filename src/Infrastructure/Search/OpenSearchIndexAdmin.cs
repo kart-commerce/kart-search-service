@@ -32,6 +32,7 @@ public sealed class OpenSearchIndexAdmin(
             description = row.Description,
             category = new { categoryId = row.CategoryId, categoryName },
             brand = row.Brand,
+            imageUrl = row.ImageUrl,
             price = new { amount = row.PriceAmount, currency = row.PriceCurrency },
             availability = row.Status,
             size = row.Size,

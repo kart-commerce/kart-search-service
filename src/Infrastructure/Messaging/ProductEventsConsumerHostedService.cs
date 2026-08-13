@@ -122,7 +122,8 @@ public sealed class ProductEventsConsumerHostedService(
             payload.Brand,
             new Money(payload.Price.Amount, payload.Price.Currency),
             FacetableAttributes.FromEventPayload(payload.Attributes.Size, payload.Attributes.Color, payload.Attributes.ExtendedAttributes),
-            payload.OccurredAt);
+            payload.OccurredAt,
+            payload.ImageUrl);
     }
 
     private static ConsumeProductPriceChangedCommand ToPriceChangedCommand(string json)
@@ -138,7 +139,7 @@ public sealed class ProductEventsConsumerHostedService(
             ? null
             : FacetableAttributes.FromEventPayload(payload.Attributes.Size, payload.Attributes.Color, payload.Attributes.ExtendedAttributes);
 
-        return new ConsumeProductUpdatedCommand(payload.Sku, payload.Name, payload.Description, payload.CategoryId, payload.Brand, attributes, payload.OccurredAt);
+        return new ConsumeProductUpdatedCommand(payload.Sku, payload.Name, payload.Description, payload.CategoryId, payload.Brand, attributes, payload.OccurredAt, payload.ImageUrl);
     }
 
     private static ConsumeProductDiscontinuedCommand ToDiscontinuedCommand(string json)

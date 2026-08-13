@@ -19,7 +19,8 @@ public sealed class NpgsqlProductCatalogSnapshotReader(IOptions<ProductCatalogSn
 
     private const string Sql = """
         SELECT v.sku, pg.name, pg.description, pg.category_id, pg.brand,
-               v.price_amount, v.price_currency, v.status, v.size, v.color, v.extended_attributes
+               v.price_amount, v.price_currency, v.status, v.size, v.color, v.extended_attributes,
+               pg.image_url
         FROM variants v
         JOIN product_groups pg ON pg.id = v.product_group_id
         WHERE v.sku > @lastSku
@@ -61,7 +62,8 @@ public sealed class NpgsqlProductCatalogSnapshotReader(IOptions<ProductCatalogSn
                         Status: reader.GetString(7),
                         Size: reader.IsDBNull(8) ? null : reader.GetString(8),
                         Color: reader.IsDBNull(9) ? null : reader.GetString(9),
-                        ExtendedAttributes: extendedAttributes));
+                        ExtendedAttributes: extendedAttributes,
+                        ImageUrl: reader.IsDBNull(11) ? null : reader.GetString(11)));
                 }
             }
 
