@@ -23,13 +23,8 @@ public sealed class ConsumeProductUpdatedCommandHandler(
 
         var fields = new CatalogUpdateFields(request.Name, request.Description, request.CategoryId, categoryName, request.Brand, request.Attributes, request.ImageUrl);
 
-        // Checkpoint-logging taxonomy stage 11 (ReadModelWriteStarted/Persisted) - the search
-        // index write IS this service's read-model write (checkpoint-logging-standard.md).
-        logger.LogInformation("Stage {Stage}: applying catalog update for {Sku}", "SearchIndexWriteStarted", request.Sku);
         var applied = await projectionRepository.ApplyCatalogUpdateAsync(request.Sku, fields, request.OccurredAt, cancellationToken);
 
-        // Checkpoint-logging taxonomy stage 5 (DecisionBranch) - applied-in-order vs
-        // rejected-as-stale are two meaningfully different, separately greppable outcomes.
         if (applied)
         {
             logger.LogInformation("Stage {Stage}: applied catalog update for {Sku}", "SearchIndexPersisted", request.Sku);

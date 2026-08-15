@@ -28,9 +28,6 @@ public sealed class SearchProductsQueryHandler(
 
         if (filterCount > MaxCombinedFilters)
         {
-            // Checkpoint-logging taxonomy stage 4 (manual guard, not FluentValidation) - the
-            // Filter step of the Normal Shopping & Purchase Journey rejecting a too-wide facet
-            // combination.
             logger.LogWarning(
                 "Stage {Stage}: search rejected, combined filter count {FilterCount} exceeds max {MaxFilters}",
                 "FacetFilterLimitExceeded",
@@ -58,9 +55,6 @@ public sealed class SearchProductsQueryHandler(
             _ => SearchSort.Relevance,
         };
 
-        // Checkpoint-logging taxonomy stage 5 (DecisionBranch) - the Filter/Sort steps of the
-        // Normal Shopping & Purchase Journey resolved to a concrete repository query shape;
-        // greppable by Stage without needing the full SearchQueryCriteria payload logged.
         logger.LogInformation(
             "Stage {Stage}: sort={Sort}, filterCount={FilterCount}, hasFreeTextQuery={HasFreeTextQuery}",
             "SearchFilterSortBranchResolved",

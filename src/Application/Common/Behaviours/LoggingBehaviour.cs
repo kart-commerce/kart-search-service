@@ -18,16 +18,10 @@ public sealed class LoggingBehaviour<TRequest, TResponse>(ILogger<LoggingBehavio
         var requestName = typeof(TRequest).Name;
         var stopwatch = Stopwatch.StartNew();
 
-        // Checkpoint-logging taxonomy stage 3 ("<Command>HandlerStarted", first line inside
-        // Handle()) generalized here rather than duplicated in every handler - this behavior
-        // already wraps every MediatR request (SearchProductsQuery and every Consume* command
-        // alike), so it's the one place that's true by construction.
-        logger.LogInformation("Stage {Stage}: {RequestName} handler started", $"{requestName}HandlerStarted", requestName);
-
         var response = await next();
         stopwatch.Stop();
 
-        logger.LogInformation("Stage {Stage}: {RequestName} completed in {ElapsedMs}ms", $"{requestName}Completed", requestName, stopwatch.ElapsedMilliseconds);
+        logger.LogInformation("{RequestName} completed in {ElapsedMs}ms", requestName, stopwatch.ElapsedMilliseconds);
 
         return response;
     }

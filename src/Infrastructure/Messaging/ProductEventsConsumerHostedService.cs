@@ -73,9 +73,6 @@ public sealed class ProductEventsConsumerHostedService(
 
     private async Task OnMessageAsync(IModel channel, QueueDefinition queue, BasicDeliverEventArgs delivery, CancellationToken cancellationToken)
     {
-        // Every event on this queue (ProductCreated/PriceChanged/Updated/Discontinued) is this
-        // flow's own fan-out into search indexing - the "downstream consumer" hop Section 4 of
-        // the tracing standard names explicitly.
         using var flowScope = KartFlowContext.Push("ProductCatalogManagementAdmin");
         using var activity = RabbitMqTraceContext.StartConsumeActivity(QueueName, delivery.BasicProperties);
 
@@ -100,9 +97,6 @@ public sealed class ProductEventsConsumerHostedService(
                 _ => throw new InvalidOperationException($"Unrecognized routing key '{routingKey}' on {QueueName}."),
             };
 
-            // Checkpoint-logging taxonomy stage 10 (NestedCommandDispatched) - the consumer
-            // dispatching its own internal MediatR command, one line per routing key so it's
-            // greppable alongside the SearchProductEventConsumed line above.
             logger.LogInformation("Stage {Stage}: dispatching {CommandName} for {RoutingKey}", "SearchNestedCommandDispatched", command.GetType().Name, routingKey);
             await sender.Send(command, cancellationToken);
             logger.LogInformation("Stage {Stage}: {RoutingKey} applied to search index", "SearchIndexUpdated", routingKey);

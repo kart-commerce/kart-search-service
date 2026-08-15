@@ -32,8 +32,6 @@ public sealed class SearchController(ISender sender, ILogger<SearchController> l
         logger.LogInformation("Stage {Stage}: search request received (q={Query}, page={Page})", "SearchRequestReceived", q, page);
 
         var query = new SearchProductsQuery(q, category, priceMin, priceMax, ratingMin, sort, page, size);
-
-        logger.LogInformation("Stage {Stage}: dispatching {QueryName}", "SearchProductsQueryDispatched", nameof(SearchProductsQuery));
         var response = await sender.Send(query, cancellationToken);
 
         logger.LogInformation("Stage {Stage}: search returned {Count} result(s)", "SearchResultsReturned", response.Results.Count);

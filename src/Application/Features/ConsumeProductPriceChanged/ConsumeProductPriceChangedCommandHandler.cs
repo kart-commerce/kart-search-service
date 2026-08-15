@@ -10,13 +10,8 @@ public sealed class ConsumeProductPriceChangedCommandHandler(
 {
     public async Task Handle(ConsumeProductPriceChangedCommand request, CancellationToken cancellationToken)
     {
-        // Checkpoint-logging taxonomy stage 11 (ReadModelWriteStarted/Persisted) - the search
-        // index write IS this service's read-model write (checkpoint-logging-standard.md).
-        logger.LogInformation("Stage {Stage}: applying price change for {Sku}", "SearchIndexWriteStarted", request.Sku);
         var applied = await projectionRepository.ApplyPriceChangeAsync(request.Sku, request.NewPrice, request.OccurredAt, cancellationToken);
 
-        // Checkpoint-logging taxonomy stage 5 (DecisionBranch) - applied-in-order vs
-        // rejected-as-stale are two meaningfully different, separately greppable outcomes.
         if (applied)
         {
             logger.LogInformation("Stage {Stage}: applied price change for {Sku}", "SearchIndexPersisted", request.Sku);
