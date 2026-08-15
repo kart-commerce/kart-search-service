@@ -32,8 +32,12 @@ public sealed class ConsumeProductCreatedCommandHandler(
             now,
             request.ImageUrl);
 
+        // Checkpoint-logging taxonomy stage 11 (ReadModelWriteStarted/Persisted) - the search
+        // index write IS this service's read-model write (checkpoint-logging-standard.md).
+        logger.LogInformation("Stage {Stage}: indexing new SearchDocument for {Sku}", "SearchIndexWriteStarted", request.Sku);
+
         await projectionRepository.CreateAsync(document, cancellationToken);
 
-        logger.LogInformation("Indexed new SearchDocument for {Sku}", request.Sku);
+        logger.LogInformation("Stage {Stage}: indexed new SearchDocument for {Sku}", "SearchIndexPersisted", request.Sku);
     }
 }

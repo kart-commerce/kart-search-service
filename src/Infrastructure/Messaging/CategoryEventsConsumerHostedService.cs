@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Kart.Search.Application.Features.ConsumeCategoryUpdated;
 using Kart.Shared.Messaging;
+using Kart.Shared.Observability;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -64,17 +65,28 @@ public sealed class CategoryEventsConsumerHostedService(
 
     private async Task OnMessageAsync(IModel channel, QueueDefinition queue, BasicDeliverEventArgs delivery, CancellationToken cancellationToken)
     {
+        // CategoryUpdated feeds this service's own product-catalog search-index freshness (the
+        // CategoryLookup read-model consulted when (re)indexing products) - same
+        // ProductCatalogManagementAdmin flow as ProductEventsConsumerHostedService, not a
+        // separately named flow (checkpoint-logging-standard.md).
+        using var flowScope = KartFlowContext.Push("ProductCatalogManagementAdmin");
+        using var activity = RabbitMqTraceContext.StartConsumeActivity(QueueName, delivery.BasicProperties);
+
         try
         {
             var json = Encoding.UTF8.GetString(delivery.Body.ToArray());
             var payload = JsonSerializer.Deserialize<CategoryUpdatedPayload>(json, JsonOptions)
                 ?? throw new InvalidOperationException("CategoryUpdated payload deserialized to null.");
 
+            logger.LogInformation("Stage {Stage}: CategoryUpdated consumed from {Queue}", "SearchCategoryEventConsumed", QueueName);
+
             using var scope = scopeFactory.CreateScope();
             var sender = scope.ServiceProvider.GetRequiredService<ISender>();
 
             var command = new ConsumeCategoryUpdatedCommand(payload.CategoryId, payload.Name, payload.OccurredAt);
+            logger.LogInformation("Stage {Stage}: dispatching {CommandName}", "SearchNestedCommandDispatched", nameof(ConsumeCategoryUpdatedCommand));
             await sender.Send(command, cancellationToken);
+            logger.LogInformation("Stage {Stage}: CategoryUpdated applied to CategoryLookup", "SearchCategoryEventApplied");
 
             channel.BasicAck(delivery.DeliveryTag, multiple: false);
         }

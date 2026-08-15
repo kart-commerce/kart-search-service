@@ -3,6 +3,7 @@ using Kart.Search.Application.Common.Exceptions;
 using Kart.Search.Application.Common.Interfaces;
 using Kart.Search.Application.Common.Models;
 using Kart.Search.Application.Features.SearchProducts;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -12,7 +13,8 @@ public sealed class SearchProductsQueryHandlerTests
 {
     private readonly Mock<ISearchQueryRepository> _searchQueryRepository = new();
 
-    private SearchProductsQueryHandler CreateHandler() => new(_searchQueryRepository.Object);
+    private SearchProductsQueryHandler CreateHandler() =>
+        new(_searchQueryRepository.Object, NullLogger<SearchProductsQueryHandler>.Instance);
 
     private static readonly SearchResponseDto EmptyResponse = new([], new FacetsDto([], [], []), new PaginationDto(1, 20, 0, false), false, []);
 

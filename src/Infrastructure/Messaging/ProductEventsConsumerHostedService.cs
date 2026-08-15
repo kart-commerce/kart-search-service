@@ -100,6 +100,10 @@ public sealed class ProductEventsConsumerHostedService(
                 _ => throw new InvalidOperationException($"Unrecognized routing key '{routingKey}' on {QueueName}."),
             };
 
+            // Checkpoint-logging taxonomy stage 10 (NestedCommandDispatched) - the consumer
+            // dispatching its own internal MediatR command, one line per routing key so it's
+            // greppable alongside the SearchProductEventConsumed line above.
+            logger.LogInformation("Stage {Stage}: dispatching {CommandName} for {RoutingKey}", "SearchNestedCommandDispatched", command.GetType().Name, routingKey);
             await sender.Send(command, cancellationToken);
             logger.LogInformation("Stage {Stage}: {RoutingKey} applied to search index", "SearchIndexUpdated", routingKey);
 
