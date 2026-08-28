@@ -263,7 +263,8 @@ public sealed class OpenSearchSearchRepository(OpenSearchHttpClient client, IOpt
             "Active",
             new RatingSummaryDto(rating.GetProperty("avg").GetDouble(), rating.GetProperty("count").GetInt32()),
             GetNullableString(source, "size"),
-            GetNullableString(source, "color"));
+            GetNullableString(source, "color"),
+            GetNullableString(source, "imageUrl"));
     }
 
     private static string? GetNullableString(JsonElement element, string property) =>

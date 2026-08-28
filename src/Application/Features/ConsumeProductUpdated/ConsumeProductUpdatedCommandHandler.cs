@@ -21,16 +21,17 @@ public sealed class ConsumeProductUpdatedCommandHandler(
             categoryName = await categoryLookupRepository.GetCategoryNameAsync(request.CategoryId, cancellationToken);
         }
 
-        var fields = new CatalogUpdateFields(request.Name, request.Description, request.CategoryId, categoryName, request.Brand, request.Attributes);
+        var fields = new CatalogUpdateFields(request.Name, request.Description, request.CategoryId, categoryName, request.Brand, request.Attributes, request.ImageUrl);
+
         var applied = await projectionRepository.ApplyCatalogUpdateAsync(request.Sku, fields, request.OccurredAt, cancellationToken);
 
         if (applied)
         {
-            logger.LogInformation("Applied catalog update for {Sku}", request.Sku);
+            logger.LogInformation("Stage {Stage}: applied catalog update for {Sku}", "SearchIndexPersisted", request.Sku);
         }
         else
         {
-            logger.LogInformation("Rejected stale-ordered ProductUpdated for {Sku} (occurredAt {OccurredAt})", request.Sku, request.OccurredAt);
+            logger.LogInformation("Stage {Stage}: rejected stale-ordered ProductUpdated for {Sku} (occurredAt {OccurredAt})", "SearchIndexWriteRejectedStaleOrder", request.Sku, request.OccurredAt);
         }
     }
 }

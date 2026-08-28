@@ -14,11 +14,11 @@ public sealed class ConsumeCategoryUpdatedCommandHandler(
 
         if (applied)
         {
-            logger.LogInformation("Updated CategoryLookup for {CategoryId}", request.CategoryId);
+            logger.LogInformation("Stage {Stage}: updated CategoryLookup for {CategoryId}", "CategoryLookupPersisted", request.CategoryId);
         }
         else
         {
-            logger.LogInformation("Rejected stale-ordered CategoryUpdated for {CategoryId} (occurredAt {OccurredAt})", request.CategoryId, request.OccurredAt);
+            logger.LogInformation("Stage {Stage}: rejected stale-ordered CategoryUpdated for {CategoryId} (occurredAt {OccurredAt})", "CategoryLookupWriteRejectedStaleOrder", request.CategoryId, request.OccurredAt);
         }
     }
 }

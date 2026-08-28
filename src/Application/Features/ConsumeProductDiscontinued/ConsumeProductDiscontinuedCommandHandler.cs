@@ -14,11 +14,11 @@ public sealed class ConsumeProductDiscontinuedCommandHandler(
 
         if (applied)
         {
-            logger.LogInformation("Soft-removed {Sku} (discontinued)", request.Sku);
+            logger.LogInformation("Stage {Stage}: soft-removed {Sku} (discontinued)", "SearchIndexPersisted", request.Sku);
         }
         else
         {
-            logger.LogInformation("Rejected stale-ordered ProductDiscontinued for {Sku} (discontinuedAt {DiscontinuedAt})", request.Sku, request.DiscontinuedAt);
+            logger.LogInformation("Stage {Stage}: rejected stale-ordered ProductDiscontinued for {Sku} (discontinuedAt {DiscontinuedAt})", "SearchIndexWriteRejectedStaleOrder", request.Sku, request.DiscontinuedAt);
         }
     }
 }

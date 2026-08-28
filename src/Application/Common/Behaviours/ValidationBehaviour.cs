@@ -1,5 +1,6 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Kart.Search.Application.Common.Behaviours;
 
@@ -8,7 +9,9 @@ namespace Kart.Search.Application.Common.Behaviours;
 /// <c>Kart.Shared.ErrorHandling</c>'s global exception handler translates it into a 400
 /// <c>validation_error</c> Problem (api-standards.md: domain/business errors use Result/exceptions
 /// at the global-handler boundary, never a local try/catch).</summary>
-public sealed class ValidationBehaviour<TRequest, TResponse>(IEnumerable<IValidator<TRequest>> validators)
+public sealed class ValidationBehaviour<TRequest, TResponse>(
+    IEnumerable<IValidator<TRequest>> validators,
+    ILogger<ValidationBehaviour<TRequest, TResponse>> logger)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
@@ -27,6 +30,14 @@ public sealed class ValidationBehaviour<TRequest, TResponse>(IEnumerable<IValida
 
         if (failures.Count > 0)
         {
+            var requestName = typeof(TRequest).Name;
+
+            logger.LogWarning(
+                "Stage {Stage}: {RequestName} rejected — {Errors}",
+                $"{requestName}ValidationFailed",
+                requestName,
+                string.Join("; ", failures.Select(f => $"{f.PropertyName}: {f.ErrorMessage}")));
+
             throw new ValidationException(failures);
         }
 

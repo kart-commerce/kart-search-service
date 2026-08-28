@@ -15,11 +15,13 @@ public sealed class LoggingBehaviour<TRequest, TResponse>(ILogger<LoggingBehavio
 {
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
+        var requestName = typeof(TRequest).Name;
         var stopwatch = Stopwatch.StartNew();
+
         var response = await next();
         stopwatch.Stop();
 
-        logger.LogInformation("{RequestName} completed in {ElapsedMs}ms", typeof(TRequest).Name, stopwatch.ElapsedMilliseconds);
+        logger.LogInformation("{RequestName} completed in {ElapsedMs}ms", requestName, stopwatch.ElapsedMilliseconds);
 
         return response;
     }

@@ -22,6 +22,9 @@ public static class OpenSearchIndexMappings
                 ["name"] = new { type = "text" },
                 ["description"] = new { type = "text" },
                 ["brand"] = new { type = "text", fields = new { keyword = new { type = "keyword" } } },
+                // Never searched/aggregated - display-only, so disable indexing entirely (same
+                // rationale as extendedAttributesRaw below).
+                ["imageUrl"] = new { type = "keyword", index = false },
                 ["category"] = new
                 {
                     properties = new

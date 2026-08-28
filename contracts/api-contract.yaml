@@ -205,6 +205,7 @@ components:
         rating: { $ref: '#/components/schemas/RatingSummary' }
         size: { type: string, nullable: true }
         color: { type: string, nullable: true }
+        imageUrl: { type: string, nullable: true, description: "A real, loadable product photo URL." }
 
     FacetBucket:
       type: object

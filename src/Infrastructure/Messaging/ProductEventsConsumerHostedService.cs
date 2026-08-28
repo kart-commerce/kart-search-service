@@ -73,9 +73,6 @@ public sealed class ProductEventsConsumerHostedService(
 
     private async Task OnMessageAsync(IModel channel, QueueDefinition queue, BasicDeliverEventArgs delivery, CancellationToken cancellationToken)
     {
-        // Every event on this queue (ProductCreated/PriceChanged/Updated/Discontinued) is this
-        // flow's own fan-out into search indexing - the "downstream consumer" hop Section 4 of
-        // the tracing standard names explicitly.
         using var flowScope = KartFlowContext.Push("ProductCatalogManagementAdmin");
         using var activity = RabbitMqTraceContext.StartConsumeActivity(QueueName, delivery.BasicProperties);
 
@@ -100,6 +97,7 @@ public sealed class ProductEventsConsumerHostedService(
                 _ => throw new InvalidOperationException($"Unrecognized routing key '{routingKey}' on {QueueName}."),
             };
 
+            logger.LogInformation("Stage {Stage}: dispatching {CommandName} for {RoutingKey}", "SearchNestedCommandDispatched", command.GetType().Name, routingKey);
             await sender.Send(command, cancellationToken);
             logger.LogInformation("Stage {Stage}: {RoutingKey} applied to search index", "SearchIndexUpdated", routingKey);
 
@@ -122,7 +120,8 @@ public sealed class ProductEventsConsumerHostedService(
             payload.Brand,
             new Money(payload.Price.Amount, payload.Price.Currency),
             FacetableAttributes.FromEventPayload(payload.Attributes.Size, payload.Attributes.Color, payload.Attributes.ExtendedAttributes),
-            payload.OccurredAt);
+            payload.OccurredAt,
+            payload.ImageUrl);
     }
 
     private static ConsumeProductPriceChangedCommand ToPriceChangedCommand(string json)
@@ -138,7 +137,7 @@ public sealed class ProductEventsConsumerHostedService(
             ? null
             : FacetableAttributes.FromEventPayload(payload.Attributes.Size, payload.Attributes.Color, payload.Attributes.ExtendedAttributes);
 
-        return new ConsumeProductUpdatedCommand(payload.Sku, payload.Name, payload.Description, payload.CategoryId, payload.Brand, attributes, payload.OccurredAt);
+        return new ConsumeProductUpdatedCommand(payload.Sku, payload.Name, payload.Description, payload.CategoryId, payload.Brand, attributes, payload.OccurredAt, payload.ImageUrl);
     }
 
     private static ConsumeProductDiscontinuedCommand ToDiscontinuedCommand(string json)

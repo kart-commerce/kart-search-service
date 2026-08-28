@@ -14,4 +14,5 @@ public sealed record ConsumeProductCreatedCommand(
     string? Brand,
     Money Price,
     FacetableAttributes Attributes,
-    DateTimeOffset OccurredAt) : IRequest;
+    DateTimeOffset OccurredAt,
+    string? ImageUrl = null) : IRequest;

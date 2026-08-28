@@ -13,4 +13,5 @@ public sealed record ConsumeProductUpdatedCommand(
     string? CategoryId,
     string? Brand,
     FacetableAttributes? Attributes,
-    DateTimeOffset OccurredAt) : IRequest;
+    DateTimeOffset OccurredAt,
+    string? ImageUrl = null) : IRequest;

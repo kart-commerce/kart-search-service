@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Kart.Search.Application.Features.ConsumeCategoryUpdated;
 using Kart.Shared.Messaging;
+using Kart.Shared.Observability;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -64,17 +65,23 @@ public sealed class CategoryEventsConsumerHostedService(
 
     private async Task OnMessageAsync(IModel channel, QueueDefinition queue, BasicDeliverEventArgs delivery, CancellationToken cancellationToken)
     {
+        using var flowScope = KartFlowContext.Push("ProductCatalogManagementAdmin");
+        using var activity = RabbitMqTraceContext.StartConsumeActivity(QueueName, delivery.BasicProperties);
+
         try
         {
             var json = Encoding.UTF8.GetString(delivery.Body.ToArray());
             var payload = JsonSerializer.Deserialize<CategoryUpdatedPayload>(json, JsonOptions)
                 ?? throw new InvalidOperationException("CategoryUpdated payload deserialized to null.");
 
+            logger.LogInformation("Stage {Stage}: CategoryUpdated consumed from {Queue}, dispatching {CommandName}", "SearchCategoryEventConsumed", QueueName, nameof(ConsumeCategoryUpdatedCommand));
+
             using var scope = scopeFactory.CreateScope();
             var sender = scope.ServiceProvider.GetRequiredService<ISender>();
 
             var command = new ConsumeCategoryUpdatedCommand(payload.CategoryId, payload.Name, payload.OccurredAt);
             await sender.Send(command, cancellationToken);
+            logger.LogInformation("Stage {Stage}: CategoryUpdated applied to CategoryLookup", "SearchCategoryEventApplied");
 
             channel.BasicAck(delivery.DeliveryTag, multiple: false);
         }

@@ -82,6 +82,7 @@ public sealed class OpenSearchProjectionRepository(
                 ctx._source.category.categoryName = params.categoryName;
               }
               if (params.brand != null) { ctx._source.brand = params.brand; }
+              if (params.imageUrl != null) { ctx._source.imageUrl = params.imageUrl; }
               if (params.size != null) { ctx._source.size = params.size; }
               if (params.color != null) { ctx._source.color = params.color; }
               if (params.sponsored != null) { ctx._source.sponsored = params.sponsored; }
@@ -108,6 +109,7 @@ public sealed class OpenSearchProjectionRepository(
                     ["categoryId"] = fields.CategoryId,
                     ["categoryName"] = fields.CategoryName,
                     ["brand"] = fields.Brand,
+                    ["imageUrl"] = fields.ImageUrl,
                     ["size"] = fields.Attributes?.Size,
                     ["color"] = fields.Attributes?.Color,
                     ["sponsored"] = fields.Attributes is null ? null : (object)fields.Attributes.Sponsored,
@@ -203,6 +205,7 @@ public sealed class OpenSearchProjectionRepository(
         description = document.Description,
         category = new { categoryId = document.Category.CategoryId, categoryName = document.Category.CategoryName },
         brand = document.Brand,
+        imageUrl = document.ImageUrl,
         price = new { amount = document.Price.Amount, currency = document.Price.Currency },
         availability = document.Availability.ToString(),
         size = document.Attributes.Size,

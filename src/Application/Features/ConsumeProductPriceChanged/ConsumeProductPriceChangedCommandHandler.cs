@@ -14,11 +14,11 @@ public sealed class ConsumeProductPriceChangedCommandHandler(
 
         if (applied)
         {
-            logger.LogInformation("Applied price change for {Sku}", request.Sku);
+            logger.LogInformation("Stage {Stage}: applied price change for {Sku}", "SearchIndexPersisted", request.Sku);
         }
         else
         {
-            logger.LogInformation("Rejected stale-ordered ProductPriceChanged for {Sku} (occurredAt {OccurredAt})", request.Sku, request.OccurredAt);
+            logger.LogInformation("Stage {Stage}: rejected stale-ordered ProductPriceChanged for {Sku} (occurredAt {OccurredAt})", "SearchIndexWriteRejectedStaleOrder", request.Sku, request.OccurredAt);
         }
     }
 }

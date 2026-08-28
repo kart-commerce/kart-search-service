@@ -29,10 +29,11 @@ public sealed class ConsumeProductCreatedCommandHandler(
             request.Price,
             request.Attributes,
             request.OccurredAt,
-            now);
+            now,
+            request.ImageUrl);
 
         await projectionRepository.CreateAsync(document, cancellationToken);
 
-        logger.LogInformation("Indexed new SearchDocument for {Sku}", request.Sku);
+        logger.LogInformation("Stage {Stage}: indexed new SearchDocument for {Sku}", "SearchIndexPersisted", request.Sku);
     }
 }

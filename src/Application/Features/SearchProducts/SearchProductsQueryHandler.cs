@@ -2,10 +2,13 @@ using Kart.Search.Application.Common.Exceptions;
 using Kart.Search.Application.Common.Interfaces;
 using Kart.Search.Application.Common.Models;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Kart.Search.Application.Features.SearchProducts;
 
-public sealed class SearchProductsQueryHandler(ISearchQueryRepository searchQueryRepository)
+public sealed class SearchProductsQueryHandler(
+    ISearchQueryRepository searchQueryRepository,
+    ILogger<SearchProductsQueryHandler> logger)
     : IRequestHandler<SearchProductsQuery, SearchResponseDto>
 {
     private const int MaxCombinedFilters = 5;
@@ -25,11 +28,22 @@ public sealed class SearchProductsQueryHandler(ISearchQueryRepository searchQuer
 
         if (filterCount > MaxCombinedFilters)
         {
+            logger.LogWarning(
+                "Stage {Stage}: search rejected, combined filter count {FilterCount} exceeds max {MaxFilters}",
+                "FacetFilterLimitExceeded",
+                filterCount,
+                MaxCombinedFilters);
             throw new FacetFilterLimitExceededException(filterCount);
         }
 
         if ((long)request.Page * request.Size > MaxResultWindow)
         {
+            logger.LogWarning(
+                "Stage {Stage}: search rejected, page {Page} size {Size} exceeds max result window {MaxWindow}",
+                "PaginationWindowExceeded",
+                request.Page,
+                request.Size,
+                MaxResultWindow);
             throw new PaginationWindowExceededException(request.Page, request.Size);
         }
 
@@ -40,6 +54,13 @@ public sealed class SearchProductsQueryHandler(ISearchQueryRepository searchQuer
             "rating_desc" => SearchSort.RatingDesc,
             _ => SearchSort.Relevance,
         };
+
+        logger.LogInformation(
+            "Stage {Stage}: sort={Sort}, filterCount={FilterCount}, hasFreeTextQuery={HasFreeTextQuery}",
+            "SearchFilterSortBranchResolved",
+            request.Sort,
+            filterCount,
+            !string.IsNullOrWhiteSpace(request.Q));
 
         var criteria = new SearchQueryCriteria(request.Q, categoryIds, request.PriceMin, request.PriceMax, request.RatingMin, sort, request.Page, request.Size);
 
